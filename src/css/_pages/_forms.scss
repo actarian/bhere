@@ -1,0 +1,55 @@
+.section--form {
+	padding: 80px 0;
+
+	&__title {
+		display: flex;
+		align-items: center;
+		line-height: 1;
+		margin-bottom: 30px;
+
+		.icon--back {
+			flex: 0 0 60px;
+			width: 40px;
+			height: 40px;
+			margin-right: 20px;
+			cursor: pointer;
+		}
+
+		&>span {
+			flex: 1 1 auto;
+			display: inline-block;
+			font-family: $font-secondary;
+			font-size: 40px;
+			font-weight: $font-medium;
+			text-transform: uppercase;
+			text-align: center;
+		}
+	}
+
+	&__abstract {
+		margin-bottom: 40px;
+		text-align: center;
+	}
+
+	form>.group--cta {
+		@include media-up(sm) {
+			display: flex;
+			justify-content: space-between;
+		}
+	}
+
+	@include media-down(sm) {
+		padding: 40px 0;
+
+		&__title {
+			.icon--back {
+				display: none;
+			}
+
+			&>span {
+				font-size: 27px;
+			}
+		}
+	}
+
+}

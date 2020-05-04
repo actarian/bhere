@@ -1,0 +1,214 @@
+@import '../mixins';
+
+%section--hero {
+	position: relative;
+	background: white;
+
+	.swiper-container {
+		@extend %swiper-hero;
+		overflow: hidden;
+	}
+
+	.background {
+		z-index: 0;
+	}
+
+	.container {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+		padding-bottom: 130px;
+	}
+
+	@media screen {
+
+		.aspect {
+			height: 100%;
+		}
+
+		.container {
+			height: 100%;
+		}
+
+		@include media-up(md) {
+			height: 770px;
+		}
+
+		@include media-down(sm) {
+			height: calc(100vh - 48px); // Fallback for browsers that do not support Custom Properties
+			height: calc(var(--vh, 1vh) * 100 - 48px);
+
+			.container {
+				padding: 120px 30px 65px 30px;
+			}
+		}
+	}
+
+	@media print {
+		background: white;
+
+		video,
+		img,
+		.data-thron {
+			display: none;
+		}
+	}
+}
+
+%section--hero-title {
+
+	.category {
+		font-family: $font-secondary;
+		line-height: 1.2;
+		font-weight: $font-medium;
+		margin-bottom: 15px;
+		color: $foreground-negative;
+		text-transform: uppercase;
+	}
+
+	.title {
+		font-family: $font-secondary;
+		line-height: 0.85;
+		font-weight: $font-medium;
+		margin-bottom: 15px;
+		color: $foreground-negative;
+		text-transform: uppercase;
+
+		small {
+			font-size: 50px;
+		}
+	}
+
+	.abstract {
+		line-height: 1.4;
+		font-weight: $font-light;
+		color: $foreground-negative;
+		max-width: 960px;
+	}
+
+	@include media-up(md) {
+		.category {
+			font-size: 20px;
+		}
+
+		.title {
+			font-size: 70px;
+
+			small {
+				font-size: 50px;
+			}
+		}
+
+		.abstract {
+			font-size: 22px;
+		}
+	}
+
+	@include media-down(sm) {
+		.category {
+			font-size: 20px;
+		}
+
+		.title {
+			font-size: 50px;
+
+			small {
+				font-size: 40px;
+			}
+		}
+
+		.abstract {
+			font-size: 19px;
+		}
+	}
+
+	@media print {
+
+		.category {
+			color: $foreground;
+		}
+
+		.title {
+			color: $foreground;
+		}
+
+		.abstract {
+			color: $foreground;
+		}
+
+	}
+
+}
+
+.section--hero {
+	@extend %section--hero;
+	@extend %section--hero-title;
+
+	.group--cta {
+		display: flex;
+		margin-top: 15px;
+	}
+}
+
+.section--hero-secondary {
+	@extend %section--hero;
+	@extend %section--hero-title;
+
+	.container {
+		padding-bottom: 90px;
+	}
+
+	@media screen {
+		@include media-up(md) {
+			height: 560px;
+		}
+	}
+
+}
+
+.section--hero-tertiary {
+	@extend %section--hero;
+	@extend %section--hero-title;
+
+	.container {
+		padding-top: 110px;
+		padding-bottom: 10px;
+	}
+
+	.background {
+		&:after {
+			background: $background-secondary;
+		}
+	}
+
+	@media screen {
+		@include media-up(lg) {
+			height: 200px;
+		}
+
+		@include media-down(md) {
+			height: 188px;
+		}
+
+		@include media-down(sm) {
+			height: 55px;
+		}
+	}
+}
+
+.scroll__indicator {
+	position: absolute;
+	left: 50%;
+	bottom: 30px;
+	transform: translateX(-50%);
+	z-index: 10;
+
+	svg {
+		width: 40px;
+		height: 40px;
+		fill: white;
+		animation: down-soft 1.8s both infinite;
+		animation-delay: 3s;
+	}
+}

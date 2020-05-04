@@ -1,0 +1,219 @@
+.btn--play {
+	display: block;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 196px;
+	height: 196px;
+	transform: translateX(-50%) translateY(-50%);
+	pointer-events: none;
+	transition: ease-in-out 350ms 200ms;
+	transition-property: width, height, opacity;
+
+	.icon--play-progress,
+	.icon--play-progress-background {
+		display: block;
+		position: absolute;
+		width: 196px;
+		height: 196px;
+		top: 0;
+		left: 0;
+		fill: transparent;
+		stroke: $foreground-negative;
+		transition: ease-in-out 350ms 200ms;
+		transition-property: width, height, opacity;
+	}
+
+	.icon--play,
+	.icon--pause {
+		display: block;
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		fill: $foreground-negative;
+		width: 30px;
+		height: 30px;
+		margin-left: -13px;
+		margin-top: -14px;
+	}
+
+	.icon--pause {
+		display: none;
+	}
+
+	.playing & {
+		opacity: 0;
+
+		.icon--play {
+			display: none;
+		}
+
+		.icon--pause {
+			display: block;
+		}
+
+		.icon--play-progress {
+			opacity: 1;
+		}
+	}
+
+	.icon--play-progress-background {
+		opacity: 0.2;
+	}
+
+	@include media-down(md) {
+		width: 150px;
+		height: 150px;
+
+		.icon--play-progress,
+		.icon--play-progress-background {
+			width: 150px;
+			height: 150px;
+		}
+	}
+
+	@include media-down(sm) {
+		width: 100px;
+		height: 100px;
+
+		.icon--play-progress,
+		.icon--play-progress-background {
+			width: 100px;
+			height: 100px;
+		}
+
+		.icon--play,
+		.icon--pause {
+			width: 20px;
+			height: 20px;
+			margin-left: -9px;
+			margin-top: -9px;
+		}
+
+		.icon--play-progress-background {
+			opacity: 0.5;
+		}
+
+	}
+
+}
+
+.video,
+.youtube {
+	cursor: pointer;
+
+	video,
+	.video {
+		transition: all 700ms 0ms cubic-bezier(0.320, 0.000, 0.290, 0.990);
+	}
+
+	.overlay {
+		@include aspect-clip(16, 9);
+		display: block;
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+
+		img {
+			opacity: 1;
+			transition: all 700ms 0ms cubic-bezier(0.320, 0.000, 0.290, 0.990);
+		}
+
+		&:after {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: linear-gradient(to bottom, rgba(0, 0, 0, 0.0) 0%, rgba(0, 0, 0, 0.75) 100%);
+			// filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#2619255a', endColorstr='#f219255a',GradientType=0 );
+			opacity: 1;
+			transition: all 700ms 0ms cubic-bezier(0.320, 0.000, 0.290, 0.990);
+		}
+	}
+
+	.playing {
+		.overlay {
+			img {
+				opacity: 0;
+			}
+
+			&:after {
+				opacity: 0;
+			}
+		}
+	}
+
+	&:hover {
+		video {
+			transform: scale(1.1, 1.1);
+		}
+
+		.overlay {
+			&:after {
+				opacity: 0.5;
+			}
+		}
+
+		.playing {
+			.overlay {
+				&:after {
+					opacity: 0.5;
+				}
+			}
+
+			.btn--play {
+				opacity: 1;
+			}
+		}
+
+	}
+
+}
+
+.youtube {
+
+	&>.picture--video {
+		&>.video {
+			object-fit: unset !important;
+		}
+	}
+
+	.content {
+		width: 100%;
+	}
+
+	@include media-down(sm) {
+		.playing {
+
+			.overlay,
+			.btn--play {
+				display: none;
+			}
+		}
+
+		.playing+.content {
+			display: none;
+		}
+	}
+}
+
+.lazy {
+	display: inline-block;
+	min-width: 1px;
+	min-height: 1px;
+
+	@media screen {
+		visibility: hidden;
+		opacity: 0;
+		transition: opacity ease-in-out 350ms;
+
+		&.lazyed {
+			visibility: visible;
+			opacity: 1;
+		}
+	}
+}

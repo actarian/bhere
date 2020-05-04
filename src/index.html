@@ -1,0 +1,74 @@
+<!-- @@master = ./templates/layout.html { "baseHref": "/bhere/" } -->
+
+<!-- @@block = main-->
+
+<div class="hidden-inputs" *if="state.connecting">
+	<video muted loop playsinline autoplay [id]="state.devices.video.deviceId" [srcc]="state.devices.video.src" *if="state.devices.video && state.devices.video.kind === 'videoplayer'"></video>
+	<audio muted loop playsinline autoplay [id]="state.devices.audio.deviceId" [srcc]="state.devices.audio.src" *if="state.devices.audio && state.devices.audio.kind === 'videoplayer'"></audio>
+</div>
+
+<div class="ui" *if="!state.connected">
+	<div class="group--info">
+		<div class="group--publisher">
+			<div class="group--devices">
+				<div class="title">Video</div>
+				<div class="listing--devices">
+					<div class="listing--devices__item" [class]="{ active: devices.video === item }" (click)="setVideo(item)" *for="let item of devices.videos">
+						<div class="device-id" [innerHTML]="item.deviceId || 'unknown'"></div>
+						<div class="label" [innerHTML]="item.label"></div>
+						<div class="switch"></div>
+					</div>
+				</div>
+				<div class="title">Audio</div>
+				<div class="listing--devices">
+					<div class="listing--devices__item" [class]="{ active: devices.audio === item }" (click)="setAudio(item)" *for="let item of devices.audios">
+						<div class="device-id" [innerHTML]="item.deviceId || 'unknown'"></div>
+						<div class="label" [innerHTML]="item.label"></div>
+						<div class="switch"></div>
+					</div>
+				</div>
+			</div>
+			<div class="group--videos" *if="state.role === 'publisher'">
+				<div class="video--source">
+					<video muted preload="auto" [srcc]="defaultInput.src"></video>
+				</div>
+			</div>
+		</div>
+		<button type="submit" class="btn--connect" [class]="{ disabled: !state.mediaEnabled }" (click)="state.mediaEnabled && connect()">
+			<svg width="24" height="24" viewBox="0 0 24 24"><use xlink:href="#call"></use></svg>
+			<span *if="!state.connecting">Entra</span>
+			<span *if="state.connecting">In connessione...</span>
+		</button>
+	</div>
+	<!--
+	<div class="group--info" *if="state.role === 'attendee'">
+		<form class="form" [formGroup]="form" (submit)="form.valid && onSubmit()" name="form" role="form" novalidate autocomplete="off">
+			<div control-custom-select [control]="formControls.video" label="Video"></div>
+			<div control-custom-select [control]="formControls.audio" label="Audio"></div>
+			<button type="submit" class="btn--connect" [class]="{ disabled: !state.mediaEnabled }" (click)="state.mediaEnabled && connect()">
+				<svg width="24" height="24" viewBox="0 0 24 24"><use xlink:href="#call"></use></svg>
+				<span *if="!state.connecting">Entra</span>
+				<span *if="state.connecting">In connessione...</span>
+			</button>
+		</form>
+		<div class="info" *if="!state.mediaEnabled">microfono non disponibile</div>
+	</div>
+	-->
+</div>
+
+<div class="ui" *if="state.connected && state.role === 'attendee'">
+	<div class="ui__body">
+		<div class="world" world>
+			<div class="world__view"></div>
+			<div class="world__info"></div>
+		</div>
+	</div>
+</div>
+
+<div class="temp">
+</div>
+
+<div class="video--local"></div>
+<div class="video--remote"></div>
+
+<!-- @@close-->
