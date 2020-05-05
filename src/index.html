@@ -9,7 +9,7 @@
 
 <div class="ui" *if="!state.connected">
 	<div class="group--info">
-		<div class="group--publisher">
+		<div class="group--publisher" *if="!state.connecting">
 			<div class="group--devices">
 				<div class="title">Video</div>
 				<div class="listing--devices">
@@ -27,10 +27,13 @@
 						<div class="switch"></div>
 					</div>
 				</div>
+				<div *if="state.role !== 'attendee'">
+					<div control-custom-select [control]="controlQuality" label="Quality"></div>
+				</div>
 			</div>
 			<div class="group--videos" *if="state.role === 'publisher'">
-				<div class="video--source">
-					<video muted preload="auto" [srcc]="defaultInput.src"></video>
+				<div class="video--source" (drop)="onFileDrop($event)">
+					<video muted preload="auto" [srcc]="defaultVideo.src"></video>
 				</div>
 			</div>
 		</div>

@@ -1,8 +1,8 @@
 import { Component, getContext } from 'rxcomp';
 // import UserService from './user/user.service';
-import { FormControl, FormGroup } from 'rxcomp-form';
+import { FormControl, FormGroup, RequiredValidator } from 'rxcomp-form';
 import { first, takeUntil } from 'rxjs/operators';
-import AgoraService, { MessageType, RoleType } from './agora/agora.service';
+import AgoraService, { MessageType, RoleType, StreamQualities } from './agora/agora.service';
 import { BASE_HREF, DEBUG } from './const';
 import HttpService from './http/http.service';
 import LocationService from './location/location.service';
@@ -16,22 +16,36 @@ export class AppComponent extends Component {
 	onInit() {
 		const { node } = getContext(this);
 		node.classList.remove('hidden');
-		const defaultInput = this.defaultInput = {
+		const defaultVideo = this.defaultVideo = {
 			deviceId: 'video-01',
 			label: 'equirectangular',
 			kind: 'videoplayer',
-			src: './video/equirectangular_low.mp4',
+			src: './video/equirectangular_4K.mp4',
+		};
+		const defaultAudio = this.defaultAudio = {
+			deviceId: 'audio-01',
+			label: 'equirectangular',
+			kind: 'videoplayer',
+			src: './video/equirectangular_4K.mp4',
 		};
 		const defaultDevices = {
-			videos: [defaultInput],
-			audios: [Object.assign({}, defaultInput, {
-				deviceId: 'audio-01',
-			})]
+			videos: [defaultVideo],
+			audios: [defaultAudio]
 		};
 		this.devices = defaultDevices;
 		this.items = [];
 		this.item = null;
 		this.form = null;
+		this.quality = StreamQualities[0].id;
+		const controlQuality = this.controlQuality = new FormControl(this.quality, new RequiredValidator());
+		controlQuality.options = StreamQualities;
+		controlQuality.changes$.pipe(
+			takeUntil(this.unsubscribe$)
+		).subscribe(changes => {
+			this.quality = controlQuality.value;
+			this.pushChanges();
+			console.log('quality', this.quality);
+		});
 		// this.initForm();
 		if (!DEBUG) {
 			const agora = this.agora = AgoraService.getSingleton(defaultDevices);
@@ -95,6 +109,29 @@ export class AppComponent extends Component {
 		// this.loadData();
 	}
 
+	onFileDrop(event) {
+		event.preventDefault();
+		const setSrc = (src) => {
+			this.defaultVideo.src = src;
+			this.defaultAudio.src = src;
+			this.pushChanges();
+		};
+		let src = event.dataTransfer.getData('url');
+		if (src) {
+			setSrc(src);
+		} else {
+			const file = event.dataTransfer.files[0];
+			const reader = new FileReader();
+			reader.readAsDataURL(file);
+			reader.addEventListener('load', () => {
+				this.defaultVideo.label = file.name;
+				this.defaultAudio.label = file.name;
+				src = reader.result;
+				setSrc(src);
+			}, false);
+		}
+	}
+
 	setVideo(device) {
 		const devices = this.devices;
 		// console.log('setVideo', device.label, device.deviceId);
@@ -146,8 +183,10 @@ export class AppComponent extends Component {
 
 	connect() {
 		if (!this.state.connecting) {
-			this.state.connecting = true;
-			this.pushChanges();
+			let quality = this.agora.state.role === RoleType.Attendee ?
+				StreamQualities[StreamQualities.length - 1] :
+				StreamQualities.find(x => x.id === this.controlQuality.value);
+			this.agora.patchState({ connecting: true, quality });
 			setTimeout(() => {
 				this.agora.connect$().pipe(
 					takeUntil(this.unsubscribe$)

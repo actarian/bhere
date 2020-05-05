@@ -2,6 +2,7 @@ import { CoreModule, Module } from 'rxcomp';
 import { FormModule } from 'rxcomp-form';
 import { AppComponent } from './app.component';
 import ControlRequestComponent from './control-request/control-request.component';
+import DropDirective from './drop/drop.directive';
 import DropdownItemDirective from './dropdown/dropdown-item.directive';
 import DropdownDirective from './dropdown/dropdown.directive';
 import ControlCustomSelectComponent from './forms/control-custom-select.component';
@@ -77,6 +78,7 @@ AppModule.meta = {
 	declarations: [
 		ControlCustomSelectComponent,
 		ControlRequestComponent,
+		DropDirective,
 		DropdownDirective,
 		DropdownItemDirective,
 		ModalComponent,

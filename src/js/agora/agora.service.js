@@ -11,6 +11,68 @@ import LocationService from '../location/location.service';
 
 export const USE_RTM = false;
 
+export const StreamQualities = [{
+	id: 1,
+	name: '4K 2160p 3840x2160',
+	resolution: {
+		width: 3840,
+		height: 2160
+	},
+	frameRate: {
+		min: 15,
+		max: 30
+	},
+	bitrate: {
+		min: 8910,
+		max: 13500
+	}
+}, {
+	id: 2,
+	name: 'HD 1440p 2560×1440',
+	resolution: {
+		width: 2560,
+		height: 1440
+	},
+	frameRate: {
+		min: 15,
+		max: 30
+	},
+	bitrate: {
+		min: 4850,
+		max: 7350
+	}
+}, {
+	id: 3,
+	name: 'HD 1080p 1920x1080',
+	resolution: {
+		width: 1920,
+		height: 1080
+	},
+	frameRate: {
+		min: 15,
+		max: 30
+	},
+	bitrate: {
+		min: 2080,
+		max: 4780
+	}
+}, {
+	id: 4,
+	name: 'LOW 720p 960x720',
+	resolution: {
+		width: 960,
+		height: 720
+	},
+	frameRate: {
+		min: 15,
+		max: 30
+	},
+	bitrate: {
+		min: 910,
+		max: 1380
+	}
+}];
+
 export const RoleType = {
 	Attendee: 'attendee',
 	Publisher: 'publisher',
@@ -78,6 +140,7 @@ export default class AgoraService extends Emittable {
 			cameraMuted: false,
 			audioMuted: false,
 			devices: role !== RoleType.Attendee ? defaultDevices : { videos: [], audios: [] },
+			quality: StreamQualities[StreamQualities.length - 1],
 		};
 		this.state$ = new BehaviorSubject(state);
 		this.message$ = new Subject();
@@ -359,23 +422,13 @@ export default class AgoraService extends Emittable {
 			console.log('AgoraService.createMediaStream', uid, options);
 			const local = this.local = AgoraRTC.createStream(options);
 			if (this.state.role === RoleType.Publisher) {
-				local.setVideoEncoderConfiguration({
-					// Video resolution
-					resolution: {
-						width: 1920,
-						height: 1080
-					},
-					// Video encoding frame rate. We recommend 15 fps. Do not set this to a value greater than 30.
-					frameRate: {
-						min: 15,
-						max: 30
-					},
-					// Video encoding bitrate.
-					bitrate: {
-						min: 3150,
-						max: 5000
-					}
-				});
+				const quality = {
+					resolution: this.state.quality.resolution,
+					frameRate: this.state.quality.frameRate,
+					bitrate: this.state.quality.bitrate,
+				};
+				console.log('AgoraService.setVideoEncoderConfiguration', quality)
+				local.setVideoEncoderConfiguration(quality);
 			}
 			this.initLocalStream(options);
 		});

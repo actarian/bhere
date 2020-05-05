@@ -279,6 +279,67 @@
     return LocationService;
   }();
 
+  var StreamQualities = [{
+    id: 1,
+    name: '4K 2160p 3840x2160',
+    resolution: {
+      width: 3840,
+      height: 2160
+    },
+    frameRate: {
+      min: 15,
+      max: 30
+    },
+    bitrate: {
+      min: 8910,
+      max: 13500
+    }
+  }, {
+    id: 2,
+    name: 'HD 1440p 2560×1440',
+    resolution: {
+      width: 2560,
+      height: 1440
+    },
+    frameRate: {
+      min: 15,
+      max: 30
+    },
+    bitrate: {
+      min: 4850,
+      max: 7350
+    }
+  }, {
+    id: 3,
+    name: 'HD 1080p 1920x1080',
+    resolution: {
+      width: 1920,
+      height: 1080
+    },
+    frameRate: {
+      min: 15,
+      max: 30
+    },
+    bitrate: {
+      min: 2080,
+      max: 4780
+    }
+  }, {
+    id: 4,
+    name: 'LOW 720p 960x720',
+    resolution: {
+      width: 960,
+      height: 720
+    },
+    frameRate: {
+      min: 15,
+      max: 30
+    },
+    bitrate: {
+      min: 910,
+      max: 1380
+    }
+  }];
   var RoleType = {
     Attendee: 'attendee',
     Publisher: 'publisher'
@@ -358,7 +419,8 @@
         devices: role !== RoleType.Attendee ? defaultDevices : {
           videos: [],
           audios: []
-        }
+        },
+        quality: StreamQualities[StreamQualities.length - 1]
       };
       _this.state$ = new rxjs.BehaviorSubject(state);
       _this.message$ = new rxjs.Subject();
@@ -664,23 +726,13 @@
         var local = _this7.local = AgoraRTC.createStream(options);
 
         if (_this7.state.role === RoleType.Publisher) {
-          local.setVideoEncoderConfiguration({
-            // Video resolution
-            resolution: {
-              width: 1920,
-              height: 1080
-            },
-            // Video encoding frame rate. We recommend 15 fps. Do not set this to a value greater than 30.
-            frameRate: {
-              min: 15,
-              max: 30
-            },
-            // Video encoding bitrate.
-            bitrate: {
-              min: 3150,
-              max: 5000
-            }
-          });
+          var quality = {
+            resolution: _this7.state.quality.resolution,
+            frameRate: _this7.state.quality.frameRate,
+            bitrate: _this7.state.quality.bitrate
+          };
+          console.log('AgoraService.setVideoEncoderConfiguration', quality);
+          local.setVideoEncoderConfiguration(quality);
         }
 
         _this7.initLocalStream(options);
@@ -1159,22 +1211,36 @@
           node = _getContext.node;
 
       node.classList.remove('hidden');
-      var defaultInput = this.defaultInput = {
+      var defaultVideo = this.defaultVideo = {
         deviceId: 'video-01',
         label: 'equirectangular',
         kind: 'videoplayer',
-        src: './video/equirectangular_low.mp4'
+        src: './video/equirectangular_4K.mp4'
+      };
+      var defaultAudio = this.defaultAudio = {
+        deviceId: 'audio-01',
+        label: 'equirectangular',
+        kind: 'videoplayer',
+        src: './video/equirectangular_4K.mp4'
       };
       var defaultDevices = {
-        videos: [defaultInput],
-        audios: [Object.assign({}, defaultInput, {
-          deviceId: 'audio-01'
-        })]
+        videos: [defaultVideo],
+        audios: [defaultAudio]
       };
       this.devices = defaultDevices;
       this.items = [];
       this.item = null;
-      this.form = null; // this.initForm();
+      this.form = null;
+      this.quality = StreamQualities[0].id;
+      var controlQuality = this.controlQuality = new rxcompForm.FormControl(this.quality, new rxcompForm.RequiredValidator());
+      controlQuality.options = StreamQualities;
+      controlQuality.changes$.pipe(operators.takeUntil(this.unsubscribe$)).subscribe(function (changes) {
+        _this.quality = controlQuality.value;
+
+        _this.pushChanges();
+
+        console.log('quality', _this.quality);
+      }); // this.initForm();
 
       {
         var agora = this.agora = AgoraService.getSingleton(defaultDevices);
@@ -1228,6 +1294,35 @@
 
     };
 
+    _proto.onFileDrop = function onFileDrop(event) {
+      var _this2 = this;
+
+      event.preventDefault();
+
+      var setSrc = function setSrc(src) {
+        _this2.defaultVideo.src = src;
+        _this2.defaultAudio.src = src;
+
+        _this2.pushChanges();
+      };
+
+      var src = event.dataTransfer.getData('url');
+
+      if (src) {
+        setSrc(src);
+      } else {
+        var file = event.dataTransfer.files[0];
+        var reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.addEventListener('load', function () {
+          _this2.defaultVideo.label = file.name;
+          _this2.defaultAudio.label = file.name;
+          src = reader.result;
+          setSrc(src);
+        }, false);
+      }
+    };
+
     _proto.setVideo = function setVideo(device) {
       var devices = this.devices; // console.log('setVideo', device.label, device.deviceId);
 
@@ -1273,24 +1368,29 @@
     };
 
     _proto.loadData = function loadData() {
-      var _this2 = this;
+      var _this3 = this;
 
       HttpService.get$('./api/data.json').pipe(operators.first()).subscribe(function (data) {
-        _this2.data = data; // this.initForm();
+        _this3.data = data; // this.initForm();
       });
     };
 
     _proto.connect = function connect() {
-      var _this3 = this;
+      var _this4 = this;
 
       if (!this.state.connecting) {
-        this.state.connecting = true;
-        this.pushChanges();
+        var quality = this.agora.state.role === RoleType.Attendee ? StreamQualities[StreamQualities.length - 1] : StreamQualities.find(function (x) {
+          return x.id === _this4.controlQuality.value;
+        });
+        this.agora.patchState({
+          connecting: true,
+          quality: quality
+        });
         setTimeout(function () {
-          _this3.agora.connect$().pipe(operators.takeUntil(_this3.unsubscribe$)).subscribe(function (state) {
-            _this3.state = Object.assign(_this3.state, state);
+          _this4.agora.connect$().pipe(operators.takeUntil(_this4.unsubscribe$)).subscribe(function (state) {
+            _this4.state = Object.assign(_this4.state, state);
 
-            _this3.pushChanges();
+            _this4.pushChanges();
           });
         }, 1000);
       }
@@ -1323,7 +1423,7 @@
     };
 
     _proto.onRemoteControlRequest = function onRemoteControlRequest(message) {
-      var _this4 = this;
+      var _this5 = this;
 
       ModalService.open$({
         src: CONTROL_REQUEST,
@@ -1331,17 +1431,17 @@
       }).pipe(operators.takeUntil(this.unsubscribe$)).subscribe(function (event) {
         if (event instanceof ModalResolveEvent) {
           message.type = MessageType.RequestControlAccepted;
-          _this4.state.locked = true;
+          _this5.state.locked = true;
         } else {
           message.type = MessageType.RequestControlRejected;
-          _this4.state.locked = false;
+          _this5.state.locked = false;
         }
 
         {
-          _this4.agora.sendMessage(message);
+          _this5.agora.sendMessage(message);
         }
 
-        _this4.pushChanges();
+        _this5.pushChanges();
       });
     };
 
@@ -1522,6 +1622,46 @@
   }(rxcomp.Component);
   ControlRequestComponent.meta = {
     selector: '[control-request]'
+  };
+
+  var DropDirective = /*#__PURE__*/function (_Directive) {
+    _inheritsLoose(DropDirective, _Directive);
+
+    function DropDirective() {
+      return _Directive.apply(this, arguments) || this;
+    }
+
+    var _proto = DropDirective.prototype;
+
+    _proto.onInit = function onInit() {
+      var _getContext = rxcomp.getContext(this),
+          module = _getContext.module,
+          node = _getContext.node,
+          parentInstance = _getContext.parentInstance,
+          selector = _getContext.selector;
+
+      var event = 'drop';
+      var event$ = rxjs.fromEvent(node, event).pipe(operators.shareReplay(1));
+      var expression = node.getAttribute("(" + event + ")");
+
+      if (expression) {
+        var outputFunction = module.makeFunction(expression, ['$event']);
+        event$.pipe(operators.takeUntil(this.unsubscribe$)).subscribe(function (event) {
+          module.resolve(outputFunction, parentInstance, event);
+        });
+        rxjs.fromEvent(node, 'dragover').pipe(operators.takeUntil(this.unsubscribe$)).subscribe(function (event) {
+          return event.preventDefault();
+        });
+      } else {
+        parentInstance[event + "$"] = event$;
+      } // console.log('DropDirective.onInit', 'selector', selector, 'event', event);
+
+    };
+
+    return DropDirective;
+  }(rxcomp.Directive);
+  DropDirective.meta = {
+    selector: "[(drop)]"
   };
 
   var DROPDOWN_ID = 1000000;
@@ -56527,7 +56667,7 @@ vec4 envMapTexelToLinear(vec4 color) {
   }(rxcomp.Module);
   AppModule.meta = {
     imports: [rxcomp.CoreModule, rxcompForm.FormModule],
-    declarations: [ControlCustomSelectComponent, ControlRequestComponent, DropdownDirective, DropdownItemDirective, ModalComponent, ModalOutletComponent, ModelComponent, ModelGltfComponent, ModelPictureComponent, ModelTextComponent, WorldComponent, SliderDirective, SrccDirective, TryInARComponent, IdDirective
+    declarations: [ControlCustomSelectComponent, ControlRequestComponent, DropDirective, DropdownDirective, DropdownItemDirective, ModalComponent, ModalOutletComponent, ModelComponent, ModelGltfComponent, ModelPictureComponent, ModelTextComponent, WorldComponent, SliderDirective, SrccDirective, TryInARComponent, IdDirective
     /*
     AgentsComponent,
     AppearDirective,
