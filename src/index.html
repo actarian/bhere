@@ -4,7 +4,13 @@
 
 <div class="hidden-inputs" *if="state.connecting">
 	<video muted loop playsinline autoplay [id]="state.devices.video.deviceId" [srcc]="state.devices.video.src" *if="state.devices.video && state.devices.video.kind === 'videoplayer'"></video>
-	<audio muted loop playsinline autoplay [id]="state.devices.audio.deviceId" [srcc]="state.devices.audio.src" *if="state.devices.audio && state.devices.audio.kind === 'videoplayer'"></audio>
+	<audio loop playsinline autoplay [id]="state.devices.audio.deviceId" [srcc]="state.devices.audio.src" *if="state.devices.audio && state.devices.audio.kind === 'videoplayer'"></audio>
+	<video muted loop playsinline autoplay [id]="state.devices.video.deviceId" *if="state.devices.video && state.devices.video.kind === 'videostream'"></video>
+	<audio loop playsinline autoplay [id]="state.devices.audio.deviceId" *if="state.devices.audio && state.devices.audio.kind === 'videostream'"></audio>
+	<!--
+	<video muted loop playsinline autoplay [id]="state.devices.video.deviceId" [hls]="state.devices.video.src" *if="state.devices.video && state.devices.video.kind === 'videostream'"></video>
+	<audio loop playsinline autoplay [id]="state.devices.audio.deviceId" [hls]="state.devices.audio.src" *if="state.devices.audio && state.devices.audio.kind === 'videostream'"></audio>
+	-->
 </div>
 
 <div class="ui" *if="!state.connected">
@@ -13,7 +19,7 @@
 			<div class="group--devices">
 				<div class="title">Video</div>
 				<div class="listing--devices">
-					<div class="listing--devices__item" [class]="{ active: devices.video === item }" (click)="setVideo(item)" *for="let item of devices.videos">
+					<div class="listing--devices__item" [class]="{ active: state.devices.video === item }" (click)="setVideo(item)" *for="let item of availableVideos()">
 						<div class="device-id" [innerHTML]="item.deviceId || 'unknown'"></div>
 						<div class="label" [innerHTML]="item.label"></div>
 						<div class="switch"></div>
@@ -21,19 +27,21 @@
 				</div>
 				<div class="title">Audio</div>
 				<div class="listing--devices">
-					<div class="listing--devices__item" [class]="{ active: devices.audio === item }" (click)="setAudio(item)" *for="let item of devices.audios">
+					<div class="listing--devices__item" [class]="{ active: state.devices.audio === item }" (click)="setAudio(item)" *for="let item of availableAudios()">
 						<div class="device-id" [innerHTML]="item.deviceId || 'unknown'"></div>
 						<div class="label" [innerHTML]="item.label"></div>
 						<div class="switch"></div>
 					</div>
 				</div>
 				<div *if="state.role !== 'attendee'">
-					<div control-custom-select [control]="controlQuality" label="Quality"></div>
+					<div control-text [control]="formControls.streamUrl" label="HLS Stream Url"></div>
+					<div control-custom-select [control]="formControls.quality" label="Quality"></div>
 				</div>
 			</div>
 			<div class="group--videos" *if="state.role === 'publisher'">
 				<div class="video--source" (drop)="onFileDrop($event)">
-					<video muted preload="auto" [srcc]="defaultVideo.src"></video>
+					<video muted preload="auto" [srcc]="state.devices.video.src" *if="state.devices.video && state.devices.video.kind === 'videoplayer'"></video>
+					<video muted playsinline [hls]="state.devices.video.src" *if="state.devices.video && state.devices.video.kind === 'videostream'"></video>
 				</div>
 			</div>
 		</div>

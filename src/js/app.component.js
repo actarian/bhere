@@ -35,17 +35,8 @@ export class AppComponent extends Component {
 		this.devices = defaultDevices;
 		this.items = [];
 		this.item = null;
-		this.form = null;
-		this.quality = StreamQualities[0].id;
-		const controlQuality = this.controlQuality = new FormControl(this.quality, new RequiredValidator());
-		controlQuality.options = StreamQualities;
-		controlQuality.changes$.pipe(
-			takeUntil(this.unsubscribe$)
-		).subscribe(changes => {
-			this.quality = controlQuality.value;
-			this.pushChanges();
-			console.log('quality', this.quality);
-		});
+		this.hls = null;
+		this.initForm();
 		// this.initForm();
 		if (!DEBUG) {
 			const agora = this.agora = AgoraService.getSingleton(defaultDevices);
@@ -109,6 +100,28 @@ export class AppComponent extends Component {
 		// this.loadData();
 	}
 
+	initForm() {
+		const form = this.form = new FormGroup({
+			streamUrl: new FormControl('https://bitmovin-a.akamaihd.net/content/playhouse-vr/m3u8s/105560.m3u8'),
+			quality: new FormControl(StreamQualities[0].id, new RequiredValidator()),
+		});
+		const formControls = this.formControls = form.controls;
+		formControls.quality.options = StreamQualities;
+		form.changes$.pipe(
+			takeUntil(this.unsubscribe$)
+		).subscribe((changes) => {
+			console.log('form.changes$', changes, form.valid);
+			if (changes.streamUrl && changes.streamUrl.indexOf('.m3u8') !== -1) {
+				this.agora.addStreamDevice(changes.streamUrl);
+				this.hls = changes.streamUrl;
+			} else {
+				this.agora.removeStreamDevice();
+				this.hls = null;
+			}
+			this.pushChanges();
+		});
+	}
+
 	onFileDrop(event) {
 		event.preventDefault();
 		const setSrc = (src) => {
@@ -130,6 +143,14 @@ export class AppComponent extends Component {
 				setSrc(src);
 			}, false);
 		}
+	}
+
+	availableVideos() {
+		return this.state.devices.videos.filter(x => x.kind === 'videoinput' || this.state.role === RoleType.Publisher);
+	}
+
+	availableAudios() {
+		return this.state.devices.audios.filter(x => x.kind === 'audioinput' || this.state.role === RoleType.Publisher);
 	}
 
 	setVideo(device) {
@@ -154,19 +175,6 @@ export class AppComponent extends Component {
 		}
 	}
 
-	initForm() {
-		const form = this.form = new FormGroup({
-			video: new FormControl(null),
-			audio: new FormControl(null),
-		});
-		const formControls = this.formControls = form.controls;
-		form.changes$.pipe(
-			takeUntil(this.unsubscribe$)
-		).subscribe((changes) => {
-			console.log('form.changes$', changes, form.valid);
-		});
-	}
-
 	onPrevent(event) {
 		event.preventDefault();
 		event.stopImmediatePropagation();
@@ -185,8 +193,8 @@ export class AppComponent extends Component {
 		if (!this.state.connecting) {
 			let quality = this.agora.state.role === RoleType.Attendee ?
 				StreamQualities[StreamQualities.length - 1] :
-				StreamQualities.find(x => x.id === this.controlQuality.value);
-			this.agora.patchState({ connecting: true, quality });
+				StreamQualities.find(x => x.id === this.formControls.quality.value);
+			this.agora.patchState({ connecting: true, quality, streamUrl: this.formControls.streamUrl.value });
 			setTimeout(() => {
 				this.agora.connect$().pipe(
 					takeUntil(this.unsubscribe$)

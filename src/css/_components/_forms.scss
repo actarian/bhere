@@ -1,5 +1,5 @@
 $family: $font-secondary;
-$size: 34px;
+$size: 16px;
 $weight: $font-light;
 $spacing: 0;
 $line: 1; // always
@@ -37,7 +37,7 @@ $invalid: $foreground-primary;
 	display: flex;
 	flex-wrap: wrap;
 	padding: 3px 1px;
-	border-bottom: 2px solid $foreground;
+	border-bottom: 1px solid $foreground;
 	margin-bottom: 15px;
 
 	label {
@@ -89,7 +89,7 @@ $invalid: $foreground-primary;
 	flex: 1 1 auto;
 	max-width: 100%;
 	margin: 0;
-	padding: 0 20px 0 0;
+	padding: 5px 20px 5px 0;
 	background: none;
 	border: none;
 	outline: none;
@@ -211,10 +211,12 @@ fieldset,
 .group--form--select {
 	@extend %group--form;
 	position: relative;
+	/*
 	background: $background;
 	border: none;
 	border-radius: 12px;
 	padding: 8px 15px;
+	*/
 	cursor: pointer;
 
 	input {
@@ -240,9 +242,11 @@ fieldset,
 
 .control--select {
 	@extend %control--text;
+	/*
 	font-size: 21px;
 	text-transform: uppercase;
 	line-height: 1;
+	*/
 
 	.multiple>& {
 		white-space: nowrap;

@@ -147,6 +147,33 @@ export default class AgoraService extends Emittable {
 		this.events$ = new Subject();
 	}
 
+	addStreamDevice(src) {
+		this.removeStreamDevice();
+		const video = {
+			deviceId: 'video-stream',
+			label: 'videostream',
+			kind: 'videostream',
+			src: src,
+		};
+		const audio = {
+			deviceId: 'audio-stream',
+			label: 'videostream',
+			kind: 'videostream',
+			src: src,
+		};
+		const devices = this.state.devices;
+		devices.videos.push(video);
+		devices.audios.push(audio);
+		this.patchState({ devices: devices });
+	}
+
+	removeStreamDevice() {
+		const devices = this.state.devices;
+		devices.videos = devices.videos.filter(x => x.kind !== 'videostream');
+		devices.audios = devices.audios.filter(x => x.kind !== 'videostream');
+		this.patchState({ devices: devices });
+	}
+
 	patchState(state) {
 		this.state = Object.assign({}, this.state, state);
 		console.log(this.state);
@@ -346,7 +373,26 @@ export default class AgoraService extends Emittable {
 	getVideoStream(options, video) {
 		return new Promise((resolve, reject) => {
 			if (video) {
-				if (video.kind === 'videoplayer') {
+				if (video.kind === 'videostream') {
+					const element = document.querySelector('#' + video.deviceId);
+					element.crossOrigin = 'anonymous';
+					var hls = new Hls();
+					hls.attachMedia(element);
+					hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+						hls.loadSource(video.src);
+						hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+							console.log('HlsDirective', data.levels);
+							element.play().then(success => {
+								const stream = element.captureStream();
+								options.videoSource = stream.getVideoTracks()[0];
+								console.log('AgoraService.getVideoStream', element, stream, stream.getVideoTracks());
+								resolve(options);
+							}, error => {
+								console.log('AgoraService.getVideoStream.error', error);
+							});
+						});
+					});
+				} else if (video.kind === 'videoplayer' || video.kind === 'videostream') {
 					const element = document.querySelector('#' + video.deviceId);
 					element.crossOrigin = 'anonymous';
 					// element.oncanplay = () => {
@@ -378,7 +424,27 @@ export default class AgoraService extends Emittable {
 	getAudioStream(options, audio) {
 		return new Promise((resolve, reject) => {
 			if (audio) {
-				if (audio.kind === 'videoplayer') {
+				if (audio.kind === 'videostream') {
+					const element = document.querySelector('#' + audio.deviceId);
+					element.crossOrigin = 'anonymous';
+					var hls = new Hls();
+					hls.attachMedia(element);
+					hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+						hls.loadSource(audio.src);
+						hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+							console.log('HlsDirective', data.levels);
+							hls.loadLevel = data.levels.length - 1;
+							element.play().then(success => {
+								const stream = element.captureStream();
+								options.audioSource = stream.getAudioTracks()[0];
+								console.log('AgoraService.getAudioStream', element, stream, stream.getAudioTracks());
+								resolve(options);
+							}, error => {
+								console.log('AgoraService.getVideoStream.error', error);
+							});
+						});
+					});
+				} else if (audio.kind === 'videoplayer' || video.kind === 'videostream') {
 					const element = document.querySelector('#' + audio.deviceId);
 					element.crossOrigin = 'anonymous';
 					// element.oncanplay = () => {

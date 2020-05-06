@@ -23,6 +23,7 @@
     "events": "~3.1.0",
     "express": "~4.17.1",
     "gsap": "~3.2.6",
+    "hls.js": "^0.13.2",
     "https": "^1.0.0",
     "qrious": "^4.0.2",
     "rxcomp": "~1.0.0-beta.9",
@@ -31,6 +32,7 @@
     "three": "~0.115.0"
   },
   "devDependencies": {
+    "@types/hls.js": "^0.12.6",
     "gulpfile-config": "~1.0.0-alpha.9"
   }
 }

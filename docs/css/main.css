@@ -335,7 +335,7 @@ button, .btn--heart, .btn--close {
   display: flex;
   flex-wrap: wrap;
   padding: 3px 1px;
-  border-bottom: 2px solid #101010;
+  border-bottom: 1px solid #101010;
   margin-bottom: 15px; }
   @media (max-width: 767.98px) {
     .group--form, .group--form--textarea, .group--form--select, .group--form--checkbox, .group--form--file {
@@ -350,7 +350,7 @@ button, .btn--heart, .btn--close {
   flex: 1 1 auto;
   max-width: 100%;
   margin: 0;
-  padding: 0 20px 0 0;
+  padding: 5px 20px 5px 0;
   background: none;
   border: none;
   outline: none;
@@ -359,7 +359,7 @@ button, .btn--heart, .btn--close {
           appearance: none;
   color: #101010;
   font-family: "Maven Pro", sans-serif;
-  font-size: 34px;
+  font-size: 16px;
   font-weight: 300;
   letter-spacing: 0;
   line-height: 1; }
@@ -369,7 +369,7 @@ button, .btn--heart, .btn--close {
     border: 0px solid transparent;
     border-radius: 0px;
     font-family: "Maven Pro", sans-serif;
-    font-size: 34px;
+    font-size: 16px;
     font-weight: 300;
     letter-spacing: 0;
     line-height: 1;
@@ -380,19 +380,19 @@ button, .btn--heart, .btn--close {
     transition: background-color 5000s ease-in-out 0s; }
   .control--text:-ms-input-placeholder, .control--select:-ms-input-placeholder {
     font-family: "Maven Pro", sans-serif;
-    font-size: 34px;
+    font-size: 16px;
     font-weight: 300;
     letter-spacing: 0;
     line-height: 1; }
   .control--text::-ms-input-placeholder, .control--select::-ms-input-placeholder {
     font-family: "Maven Pro", sans-serif;
-    font-size: 34px;
+    font-size: 16px;
     font-weight: 300;
     letter-spacing: 0;
     line-height: 1; }
   .control--text::placeholder, .control--select::placeholder {
     font-family: "Maven Pro", sans-serif;
-    font-size: 34px;
+    font-size: 16px;
     font-weight: 300;
     letter-spacing: 0;
     line-height: 1; }
@@ -461,10 +461,12 @@ fieldset,
 /* select */
 .group--form--select {
   position: relative;
-  background: #ffffff;
-  border: none;
-  border-radius: 12px;
-  padding: 8px 15px;
+  /*
+	background: $background;
+	border: none;
+	border-radius: 12px;
+	padding: 8px 15px;
+	*/
   cursor: pointer; }
   .group--form--select input {
     pointer-events: none; }
@@ -481,9 +483,11 @@ fieldset,
       margin: 0 0 10px 0; } }
 
 .control--select {
-  font-size: 21px;
-  text-transform: uppercase;
-  line-height: 1; }
+  /*
+	font-size: 21px;
+	text-transform: uppercase;
+	line-height: 1;
+	*/ }
   .multiple > .control--select {
     white-space: nowrap;
     overflow: hidden;
@@ -3752,13 +3756,16 @@ body {
       font-size: 12px; }
   .ui__head .group--local {
     display: none; }
-  .control--select {
-    font-size: 15px;
-    text-transform: uppercase;
-    line-height: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis; }
+  /*
+	.control--select {
+		font-size: 15px;
+		text-transform: uppercase;
+		line-height: 1;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	*/
   .ui__foot .left,
   .ui__foot .right {
     flex: 0 1 auto; }

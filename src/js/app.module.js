@@ -6,12 +6,14 @@ import DropDirective from './drop/drop.directive';
 import DropdownItemDirective from './dropdown/dropdown-item.directive';
 import DropdownDirective from './dropdown/dropdown.directive';
 import ControlCustomSelectComponent from './forms/control-custom-select.component';
+import ControlTextComponent from './forms/control-text.component';
 import IdDirective from './id/id.directive';
 import ModalOutletComponent from './modal/modal-outlet.component';
 import ModalComponent from './modal/modal.component';
 import { SliderDirective } from './slider/slider.directive';
 import { SrccDirective } from './srcc/srcc.directive';
 import TryInARComponent from './try-in-ar/try-in-ar';
+import HlsDirective from './video/hls.directive';
 import { ModelGltfComponent } from './world/model-gltf.component';
 import { ModelPictureComponent } from './world/model-picture.component';
 import { ModelTextComponent } from './world/model-text.component';
@@ -78,9 +80,11 @@ AppModule.meta = {
 	declarations: [
 		ControlCustomSelectComponent,
 		ControlRequestComponent,
+		ControlTextComponent,
 		DropDirective,
 		DropdownDirective,
 		DropdownItemDirective,
+		HlsDirective,
 		ModalComponent,
 		ModalOutletComponent,
 		ModelComponent,

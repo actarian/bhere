@@ -430,6 +430,41 @@
 
     var _proto = AgoraService.prototype;
 
+    _proto.addStreamDevice = function addStreamDevice(src) {
+      this.removeStreamDevice();
+      var video = {
+        deviceId: 'video-stream',
+        label: 'videostream',
+        kind: 'videostream',
+        src: src
+      };
+      var audio = {
+        deviceId: 'audio-stream',
+        label: 'videostream',
+        kind: 'videostream',
+        src: src
+      };
+      var devices = this.state.devices;
+      devices.videos.push(video);
+      devices.audios.push(audio);
+      this.patchState({
+        devices: devices
+      });
+    };
+
+    _proto.removeStreamDevice = function removeStreamDevice() {
+      var devices = this.state.devices;
+      devices.videos = devices.videos.filter(function (x) {
+        return x.kind !== 'videostream';
+      });
+      devices.audios = devices.audios.filter(function (x) {
+        return x.kind !== 'videostream';
+      });
+      this.patchState({
+        devices: devices
+      });
+    };
+
     _proto.patchState = function patchState(state) {
       this.state = Object.assign({}, this.state, state);
       console.log(this.state);
@@ -650,13 +685,34 @@
     _proto.getVideoStream = function getVideoStream(options, video) {
       return new Promise(function (resolve, reject) {
         if (video) {
-          if (video.kind === 'videoplayer') {
+          if (video.kind === 'videostream') {
             var element = document.querySelector('#' + video.deviceId);
-            element.crossOrigin = 'anonymous'; // element.oncanplay = () => {
+            element.crossOrigin = 'anonymous';
+            var hls = new Hls();
+            hls.attachMedia(element);
+            hls.on(Hls.Events.MEDIA_ATTACHED, function () {
+              hls.loadSource(video.src);
+              hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
+                console.log('HlsDirective', data.levels);
+                element.play().then(function (success) {
+                  var stream = element.captureStream();
+                  options.videoSource = stream.getVideoTracks()[0];
+                  console.log('AgoraService.getVideoStream', element, stream, stream.getVideoTracks());
+                  resolve(options);
+                }, function (error) {
+                  console.log('AgoraService.getVideoStream.error', error);
+                });
+              });
+            });
+          } else if (video.kind === 'videoplayer' || video.kind === 'videostream') {
+            var _element = document.querySelector('#' + video.deviceId);
 
-            var stream = element.captureStream();
+            _element.crossOrigin = 'anonymous'; // element.oncanplay = () => {
+
+            var stream = _element.captureStream();
+
             options.videoSource = stream.getVideoTracks()[0];
-            console.log('getVideoStream', element, stream, stream.getVideoTracks());
+            console.log('getVideoStream', _element, stream, stream.getVideoTracks());
             resolve(options); // };
 
             /*
@@ -682,13 +738,35 @@
     _proto.getAudioStream = function getAudioStream(options, audio) {
       return new Promise(function (resolve, reject) {
         if (audio) {
-          if (audio.kind === 'videoplayer') {
+          if (audio.kind === 'videostream') {
             var element = document.querySelector('#' + audio.deviceId);
-            element.crossOrigin = 'anonymous'; // element.oncanplay = () => {
+            element.crossOrigin = 'anonymous';
+            var hls = new Hls();
+            hls.attachMedia(element);
+            hls.on(Hls.Events.MEDIA_ATTACHED, function () {
+              hls.loadSource(audio.src);
+              hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
+                console.log('HlsDirective', data.levels);
+                hls.loadLevel = data.levels.length - 1;
+                element.play().then(function (success) {
+                  var stream = element.captureStream();
+                  options.audioSource = stream.getAudioTracks()[0];
+                  console.log('AgoraService.getAudioStream', element, stream, stream.getAudioTracks());
+                  resolve(options);
+                }, function (error) {
+                  console.log('AgoraService.getVideoStream.error', error);
+                });
+              });
+            });
+          } else if (audio.kind === 'videoplayer' || video.kind === 'videostream') {
+            var _element2 = document.querySelector('#' + audio.deviceId);
 
-            var stream = element.captureStream();
+            _element2.crossOrigin = 'anonymous'; // element.oncanplay = () => {
+
+            var stream = _element2.captureStream();
+
             options.audioSource = stream.getAudioTracks()[0];
-            console.log('AgoraService.getAudioStream', element, stream, stream.getAudioTracks());
+            console.log('AgoraService.getAudioStream', _element2, stream, stream.getAudioTracks());
             resolve(options); // };
 
             /*
@@ -1060,11 +1138,13 @@
 
       if (id !== this.state.uid) {
         stream.stop('agora_remote_' + id);
-        var video = document.querySelector('.video--remote');
 
-        if (video) {
-          video.classList.remove('playing');
-          video.textContent = '';
+        var _video = document.querySelector('.video--remote');
+
+        if (_video) {
+          _video.classList.remove('playing');
+
+          _video.textContent = '';
         }
       }
 
@@ -1078,11 +1158,12 @@
       var id = event.uid; // console.log('peer-leave id', id);
 
       if (id !== this.state.uid) {
-        var video = document.querySelector('.video--remote');
+        var _video2 = document.querySelector('.video--remote');
 
-        if (video) {
-          video.classList.remove('playing');
-          video.textContent = '';
+        if (_video2) {
+          _video2.classList.remove('playing');
+
+          _video2.textContent = '';
         }
 
         this.patchState({
@@ -1230,17 +1311,8 @@
       this.devices = defaultDevices;
       this.items = [];
       this.item = null;
-      this.form = null;
-      this.quality = StreamQualities[0].id;
-      var controlQuality = this.controlQuality = new rxcompForm.FormControl(this.quality, new rxcompForm.RequiredValidator());
-      controlQuality.options = StreamQualities;
-      controlQuality.changes$.pipe(operators.takeUntil(this.unsubscribe$)).subscribe(function (changes) {
-        _this.quality = controlQuality.value;
-
-        _this.pushChanges();
-
-        console.log('quality', _this.quality);
-      }); // this.initForm();
+      this.hls = null;
+      this.initForm(); // this.initForm();
 
       {
         var agora = this.agora = AgoraService.getSingleton(defaultDevices);
@@ -1294,16 +1366,42 @@
 
     };
 
-    _proto.onFileDrop = function onFileDrop(event) {
+    _proto.initForm = function initForm() {
       var _this2 = this;
+
+      var form = this.form = new rxcompForm.FormGroup({
+        streamUrl: new rxcompForm.FormControl('https://bitmovin-a.akamaihd.net/content/playhouse-vr/m3u8s/105560.m3u8'),
+        quality: new rxcompForm.FormControl(StreamQualities[0].id, new rxcompForm.RequiredValidator())
+      });
+      var formControls = this.formControls = form.controls;
+      formControls.quality.options = StreamQualities;
+      form.changes$.pipe(operators.takeUntil(this.unsubscribe$)).subscribe(function (changes) {
+        console.log('form.changes$', changes, form.valid);
+
+        if (changes.streamUrl && changes.streamUrl.indexOf('.m3u8') !== -1) {
+          _this2.agora.addStreamDevice(changes.streamUrl);
+
+          _this2.hls = changes.streamUrl;
+        } else {
+          _this2.agora.removeStreamDevice();
+
+          _this2.hls = null;
+        }
+
+        _this2.pushChanges();
+      });
+    };
+
+    _proto.onFileDrop = function onFileDrop(event) {
+      var _this3 = this;
 
       event.preventDefault();
 
       var setSrc = function setSrc(src) {
-        _this2.defaultVideo.src = src;
-        _this2.defaultAudio.src = src;
+        _this3.defaultVideo.src = src;
+        _this3.defaultAudio.src = src;
 
-        _this2.pushChanges();
+        _this3.pushChanges();
       };
 
       var src = event.dataTransfer.getData('url');
@@ -1315,12 +1413,28 @@
         var reader = new FileReader();
         reader.readAsDataURL(file);
         reader.addEventListener('load', function () {
-          _this2.defaultVideo.label = file.name;
-          _this2.defaultAudio.label = file.name;
+          _this3.defaultVideo.label = file.name;
+          _this3.defaultAudio.label = file.name;
           src = reader.result;
           setSrc(src);
         }, false);
       }
+    };
+
+    _proto.availableVideos = function availableVideos() {
+      var _this4 = this;
+
+      return this.state.devices.videos.filter(function (x) {
+        return x.kind === 'videoinput' || _this4.state.role === RoleType.Publisher;
+      });
+    };
+
+    _proto.availableAudios = function availableAudios() {
+      var _this5 = this;
+
+      return this.state.devices.audios.filter(function (x) {
+        return x.kind === 'audioinput' || _this5.state.role === RoleType.Publisher;
+      });
     };
 
     _proto.setVideo = function setVideo(device) {
@@ -1351,46 +1465,36 @@
       }
     };
 
-    _proto.initForm = function initForm() {
-      var form = this.form = new rxcompForm.FormGroup({
-        video: new rxcompForm.FormControl(null),
-        audio: new rxcompForm.FormControl(null)
-      });
-      var formControls = this.formControls = form.controls;
-      form.changes$.pipe(operators.takeUntil(this.unsubscribe$)).subscribe(function (changes) {
-        console.log('form.changes$', changes, form.valid);
-      });
-    };
-
     _proto.onPrevent = function onPrevent(event) {
       event.preventDefault();
       event.stopImmediatePropagation();
     };
 
     _proto.loadData = function loadData() {
-      var _this3 = this;
+      var _this6 = this;
 
       HttpService.get$('./api/data.json').pipe(operators.first()).subscribe(function (data) {
-        _this3.data = data; // this.initForm();
+        _this6.data = data; // this.initForm();
       });
     };
 
     _proto.connect = function connect() {
-      var _this4 = this;
+      var _this7 = this;
 
       if (!this.state.connecting) {
         var quality = this.agora.state.role === RoleType.Attendee ? StreamQualities[StreamQualities.length - 1] : StreamQualities.find(function (x) {
-          return x.id === _this4.controlQuality.value;
+          return x.id === _this7.formControls.quality.value;
         });
         this.agora.patchState({
           connecting: true,
-          quality: quality
+          quality: quality,
+          streamUrl: this.formControls.streamUrl.value
         });
         setTimeout(function () {
-          _this4.agora.connect$().pipe(operators.takeUntil(_this4.unsubscribe$)).subscribe(function (state) {
-            _this4.state = Object.assign(_this4.state, state);
+          _this7.agora.connect$().pipe(operators.takeUntil(_this7.unsubscribe$)).subscribe(function (state) {
+            _this7.state = Object.assign(_this7.state, state);
 
-            _this4.pushChanges();
+            _this7.pushChanges();
           });
         }, 1000);
       }
@@ -1423,7 +1527,7 @@
     };
 
     _proto.onRemoteControlRequest = function onRemoteControlRequest(message) {
-      var _this5 = this;
+      var _this8 = this;
 
       ModalService.open$({
         src: CONTROL_REQUEST,
@@ -1431,17 +1535,17 @@
       }).pipe(operators.takeUntil(this.unsubscribe$)).subscribe(function (event) {
         if (event instanceof ModalResolveEvent) {
           message.type = MessageType.RequestControlAccepted;
-          _this5.state.locked = true;
+          _this8.state.locked = true;
         } else {
           message.type = MessageType.RequestControlRejected;
-          _this5.state.locked = false;
+          _this8.state.locked = false;
         }
 
         {
-          _this5.agora.sendMessage(message);
+          _this8.agora.sendMessage(message);
         }
 
-        _this5.pushChanges();
+        _this8.pushChanges();
       });
     };
 
@@ -2057,6 +2161,30 @@
 
   };
 
+  var ControlTextComponent = /*#__PURE__*/function (_ControlComponent) {
+    _inheritsLoose(ControlTextComponent, _ControlComponent);
+
+    function ControlTextComponent() {
+      return _ControlComponent.apply(this, arguments) || this;
+    }
+
+    var _proto = ControlTextComponent.prototype;
+
+    _proto.onInit = function onInit() {
+      this.label = 'label';
+      this.required = false;
+    };
+
+    return ControlTextComponent;
+  }(ControlComponent);
+  ControlTextComponent.meta = {
+    selector: '[control-text]',
+    inputs: ['control', 'label'],
+    template:
+    /* html */
+    "\n\t\t<div class=\"group--form\" [class]=\"{ required: control.validators.length }\">\n\t\t\t<label [innerHTML]=\"label\"></label>\n\t\t\t<input type=\"text\" class=\"control--text\" [formControl]=\"control\" [placeholder]=\"label\" />\n\t\t\t<span class=\"required__badge\">required</span>\n\t\t</div>\n\t\t<errors-component [control]=\"control\"></errors-component>\n\t"
+  };
+
   var IdDirective = /*#__PURE__*/function (_Directive) {
     _inheritsLoose(IdDirective, _Directive);
 
@@ -2524,6 +2652,53 @@
   }(rxcomp.Component);
   TryInARComponent.meta = {
     selector: '[try-in-ar]'
+  };
+
+  var HlsDirective = /*#__PURE__*/function (_Directive) {
+    _inheritsLoose(HlsDirective, _Directive);
+
+    function HlsDirective() {
+      return _Directive.apply(this, arguments) || this;
+    }
+
+    var _proto = HlsDirective.prototype;
+
+    _proto.play = function play(src) {
+      var _getContext = rxcomp.getContext(this),
+          node = _getContext.node;
+
+      if (Hls.isSupported()) {
+        var hls = new Hls(); // bind them together
+
+        hls.attachMedia(node);
+        hls.on(Hls.Events.MEDIA_ATTACHED, function () {
+          hls.loadSource(src);
+          hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
+            console.log('HlsDirective', data.levels);
+            node.play();
+          });
+        });
+      }
+    };
+
+    _createClass(HlsDirective, [{
+      key: "hls",
+      set: function set(hls) {
+        if (this.hls_ !== hls) {
+          this.hls_ = hls;
+          this.play(hls);
+        }
+      },
+      get: function get() {
+        return this.hls_;
+      }
+    }]);
+
+    return HlsDirective;
+  }(rxcomp.Directive);
+  HlsDirective.meta = {
+    selector: '[[hls]]',
+    inputs: ['hls']
   };
 
   // Polyfills
@@ -56202,6 +56377,11 @@ vec4 envMapTexelToLinear(vec4 color) {
         });
         agora.message$.pipe(operators.takeUntil(this.unsubscribe$)).subscribe(function (message) {
           switch (message.type) {
+            case MessageType.HlsEvent:
+              if (message.src) ;
+
+              break;
+
             case MessageType.SlideRotate:
               if (agora.state.locked && message.coords) {
                 var group = _this2.objects.children[_this2.index];
@@ -56667,7 +56847,7 @@ vec4 envMapTexelToLinear(vec4 color) {
   }(rxcomp.Module);
   AppModule.meta = {
     imports: [rxcomp.CoreModule, rxcompForm.FormModule],
-    declarations: [ControlCustomSelectComponent, ControlRequestComponent, DropDirective, DropdownDirective, DropdownItemDirective, ModalComponent, ModalOutletComponent, ModelComponent, ModelGltfComponent, ModelPictureComponent, ModelTextComponent, WorldComponent, SliderDirective, SrccDirective, TryInARComponent, IdDirective
+    declarations: [ControlCustomSelectComponent, ControlRequestComponent, ControlTextComponent, DropDirective, DropdownDirective, DropdownItemDirective, HlsDirective, ModalComponent, ModalOutletComponent, ModelComponent, ModelGltfComponent, ModelPictureComponent, ModelTextComponent, WorldComponent, SliderDirective, SrccDirective, TryInARComponent, IdDirective
     /*
     AgentsComponent,
     AppearDirective,
